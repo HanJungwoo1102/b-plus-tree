@@ -1,4 +1,5 @@
 // Note: You need to add additional member variables and functions as you need.
+#include <iostream>
 
 #define NUM_KEYS 10 
 // NUM_KEYS should be set to make each tree node as large as 4KB. 
@@ -17,7 +18,8 @@ class BTreeNode{
    protected:
 	NodeType type;
    public:
-	BTreeNode();
+   	BTreeNode();
+	BTreeNode(NodeType type);
 	virtual ~BTreeNode() {}
 	NodeType getNodeType();
 };
