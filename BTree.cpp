@@ -5,10 +5,6 @@ BTreeNode::BTreeNode() {
 
 }
 
-BTreeNode::~BTreeNode() {
-
-}
-
 NodeType BTreeNode::getNodeType() {
 
 }
