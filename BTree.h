@@ -17,16 +17,20 @@ enum NodeType {
 class BTreeNode{   
    protected:
 	NodeType type;
+	long long keys[NUM_KEYS];
+	int length;
+	void addKey(long long key);
    public:
    	BTreeNode();
 	BTreeNode(NodeType type);
 	virtual ~BTreeNode() {}
 	NodeType getNodeType();
+	int getLength();
+	long long getKey(int keyIndex);
 };
 
 class BTreeInternalNode:public BTreeNode{
    private:
-	long long keys[NUM_KEYS];
 	BTreeNode* child[NUM_KEYS+1];
    public:
 	BTreeInternalNode();
@@ -35,18 +39,19 @@ class BTreeInternalNode:public BTreeNode{
 
 class BTreeLeafNode:public BTreeNode{
    private:
-	long long keys[NUM_KEYS];
 	BTreeLeafNode* right_sibling;
    public:
 	BTreeLeafNode();
 	~BTreeLeafNode();
 	void printLeafNode(); // print all keys in the current leaf node, separated by comma.
+	void add(long long key);
 };
 
 
 class BTree{  
     private:
 	BTreeNode *root;
+	bool isEmpty();
     public:
 	// You are not allowed to change the interfaces of these public methods.
 	BTree(); 
