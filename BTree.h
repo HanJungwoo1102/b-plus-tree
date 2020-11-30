@@ -35,6 +35,7 @@ class BTreeInternalNode:public BTreeNode{
    public:
 	BTreeInternalNode();
 	~BTreeInternalNode();
+	BTreeNode* getPointer(int pointerIndex);
 };
 
 class BTreeLeafNode:public BTreeNode{
@@ -45,8 +46,9 @@ class BTreeLeafNode:public BTreeNode{
 	~BTreeLeafNode();
 	void printLeafNode(); // print all keys in the current leaf node, separated by comma.
 	void add(long long key);
+	BTreeLeafNode* getNextBTreeLeafNode();
+	void setNextBTreeLeafNode(BTreeLeafNode* bTreeLeafNode);
 };
-
 
 class BTree{  
     private:
