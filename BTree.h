@@ -19,7 +19,8 @@ class BTreeNode{
 	NodeType type;
 	long long keys[NUM_KEYS];
 	int length;
-	void addKey(long long key);
+	void insertKey(long long key);
+	void removeKey(long long key);
    public:
    	BTreeNode();
 	BTreeNode(NodeType type);
@@ -45,7 +46,7 @@ class BTreeLeafNode:public BTreeNode{
 	BTreeLeafNode();
 	~BTreeLeafNode();
 	void printLeafNode(); // print all keys in the current leaf node, separated by comma.
-	void add(long long key);
+	void insert(long long key);
 	BTreeLeafNode* getNextBTreeLeafNode();
 	void setNextBTreeLeafNode(BTreeLeafNode* bTreeLeafNode);
 };
@@ -54,6 +55,7 @@ class BTree{
     private:
 	BTreeNode *root;
 	bool isEmpty();
+	BTreeLeafNode* findLeafNode(long long key);
     public:
 	// You are not allowed to change the interfaces of these public methods.
 	BTree(); 

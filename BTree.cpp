@@ -13,10 +13,45 @@ NodeType BTreeNode::getNodeType() {
 	return BTreeNode::type;
 }
 
-void BTreeNode::addKey(long long key) {
+void BTreeNode::insertKey(long long key) {
 	int length = BTreeNode::length;
-	BTreeNode::keys[length] = key;
+	long long * keys = BTreeNode::keys;
+
+	int insertedKeyIndex = length;
+
+	for (int i = 0; i < length; i++) {
+		if (keys[i] > key) {
+			insertedKeyIndex = i;
+			break;
+		}
+	}
+
+	for (int i = length - 1; i >= insertedKeyIndex; i--) {
+		keys[i + 1] = keys[i];
+	}	
+
+	keys[insertedKeyIndex] = key;
 	BTreeNode::length = length + 1;
+}
+
+void BTreeNode::removeKey(long long key) {
+	int length = BTreeNode::length;
+	long long * keys = BTreeNode::keys;
+
+	int removedKeyIndex = -1;
+
+	for (int i =0; i < length; i++) {
+		if (keys[i] == key) {
+			removedKeyIndex = i;
+			break;
+		}
+	}
+
+	if (removedKeyIndex != -1) {
+		for (int i = removedKeyIndex; i < length - 1; i++) {
+			keys[i] = keys[i + 1];
+		}
+	}
 }
 
 int BTreeNode::getLength() {
@@ -47,8 +82,8 @@ void BTreeLeafNode::printLeafNode() {
 
 }
 
-void BTreeLeafNode::add(long long key) {
-	BTreeLeafNode::addKey(key);
+void BTreeLeafNode::insert(long long key) {
+	BTreeLeafNode::insertKey(key);
 }
 
 BTreeLeafNode* BTreeLeafNode::getNextBTreeLeafNode() {
@@ -75,33 +110,13 @@ void BTree::insert(long long value) {
 	if (BTree::isEmpty()) {
 		leafNode = new BTreeLeafNode();
 	} else {
-		BTreeNode* currentNode = BTree::root;
-		while(currentNode->getNodeType() != NodeType::LEAF)	{
-			BTreeInternalNode* currentInternalNode = (BTreeInternalNode*)currentNode;
-			int length = currentInternalNode->getLength();
-			int i = 0;
-			for (; i > length; i++) {
-				long long currentKey = currentInternalNode->getKey(i);
-				if (value < currentKey) {
-					break;
-				}
-			}
-
-			if (i == length) {
-				currentNode = currentInternalNode->getPointer(length);	
-			} else if (value == currentInternalNode->getKey(i)) {
-				currentNode = currentInternalNode->getPointer(i + 1);	
-			} else {
-				currentNode = currentInternalNode->getPointer(i);
-			}
-		}
-		leafNode = (BTreeLeafNode*)currentNode;
+		leafNode = BTree::findLeafNode(value);
 	}	
 
 	int length = leafNode->getLength();
 	
 	if (length < NUM_KEYS) {
-		leafNode->add(value);	
+		leafNode->insert(value);	
 	} else {
 		BTreeLeafNode* newLeafNode = new BTreeLeafNode();	
 
@@ -143,3 +158,28 @@ void BTree::rangeQuery(long long low, long long high) {
 bool BTree::isEmpty() {
 	return BTree::root == NULL;
 }
+
+BTreeLeafNode* BTree::findLeafNode(long long key) {
+	BTreeNode* currentNode = BTree::root;
+	while(currentNode->getNodeType() != NodeType::LEAF)	{
+		BTreeInternalNode* currentInternalNode = (BTreeInternalNode*)currentNode;
+		int length = currentInternalNode->getLength();
+		int i = 0;
+		for (; i > length; i++) {
+			long long currentKey = currentInternalNode->getKey(i);
+			if (key < currentKey) {
+				break;
+			}
+		}
+
+		if (i == length) {
+			currentNode = currentInternalNode->getPointer(length);	
+		} else if (key == currentInternalNode->getKey(i)) {
+			currentNode = currentInternalNode->getPointer(i + 1);	
+		} else {
+			currentNode = currentInternalNode->getPointer(i);
+		}
+	}
+	return (BTreeLeafNode*)currentNode;
+};
+
