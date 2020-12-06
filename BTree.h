@@ -68,6 +68,7 @@ class BTree{
 	void eraseKeys(Key* keys);
 	BTreeInternalNode* findParent(BTreeNode* node);
 	BTreeInternalNode* findParentNodeHavingThisChild(BTreeNode* node, BTreeNode* findingNode);
+	void printAllLeaves();
     public:
 	// You are not allowed to change the interfaces of these public methodu.
 	BTree(); 

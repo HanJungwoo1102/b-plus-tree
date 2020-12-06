@@ -39,10 +39,6 @@ BTreeLeafNode::~BTreeLeafNode() {
 
 }
 
-void BTreeLeafNode::printLeafNode() {
-
-}
-
 BTreeLeafNode* BTreeLeafNode::getNextBTreeLeafNode() {
 	return BTreeLeafNode::right_sibling; 
 }
@@ -85,7 +81,7 @@ void BTree::insert(long long value) {
 		}
 
 		BTree::copyKeys(keys, tempKeys, 0, NUM_KEYS - 1);
-
+		
 		BTree::insertInLeaf(tempKeys, value);
 
 		BTree::eraseKeys(keys);
@@ -100,26 +96,16 @@ void BTree::insert(long long value) {
 
 		BTree::insertInParent(leafNode, newLeafKeys[0], newLeafNode);
 	}
+	BTree::printAllLeaves();
 }
 
 void BTree::printLeafNode(long long value) {
-	BTreeNode* currentNode = BTree::root;
+	BTreeLeafNode* leafNode = BTree::findLeafNode(value);
 
-	while (currentNode->getNodeType() != NodeType::LEAF) {
-		BTreeInternalNode* currentInternalNode = (BTreeInternalNode*)currentNode;
-		BTreeNode** pointers = currentInternalNode->getPointers();
+	Key* keys = leafNode->getKeys();
 
-		currentNode = pointers[0];
-	}
-
-	BTreeLeafNode* leafNode = (BTreeLeafNode*) currentNode;
-	while (leafNode != nullptr) {
-		Key* keys = leafNode->getKeys();
-		for (int i = 0; i < NUM_KEYS; i++) {
-			std::cout << keys[i] << " ";
-		}
-		leafNode = leafNode->getNextBTreeLeafNode();
-		std::cout << " | ";
+	for (int i = 0; i < NUM_KEYS; i++) {
+		std::cout << keys[i] << " ";
 	}
 	std::cout << std::endl;
 }
@@ -133,11 +119,10 @@ void BTree::pointQuery(long long value) {
 		std::cout << keys[i] << " ";
 	}
 	std::cout << std::endl;
-
 }
 
 void BTree::rangeQuery(long long low, long long high) {
-
+	std::cout << "low: " << low << ", hight: " << high << std::endl;
 }
 
 BTreeLeafNode* BTree::findLeafNode(Key key) {
@@ -246,7 +231,7 @@ void BTree::copyKeys(Key* sourceKeyAddress, Key* targetKeyAddress, int startInde
 	Key* startAddress = sourceKeyAddress + startIndex;
 	size_t copySize = (endIndex - startIndex + 1) * sizeof(Key);
 	
-	memcpy(startAddress, targetKeyAddress, copySize);	
+	memcpy(targetKeyAddress, startAddress, copySize);	
 }
 
 void BTree::eraseKeys(Key* keys) {
@@ -281,5 +266,28 @@ BTreeInternalNode* BTree::findParentNodeHavingThisChild(BTreeNode* node, BTreeNo
 			}
 		}
 	}
+}
+
+void BTree::printAllLeaves() {
+	BTreeNode* currentNode = BTree::root;
+
+	while (currentNode->getNodeType() != NodeType::LEAF) {
+		BTreeInternalNode* currentInternalNode = (BTreeInternalNode*)currentNode;
+		BTreeNode** pointers = currentInternalNode->getPointers();
+
+		currentNode = pointers[0];
+	}
+
+	BTreeLeafNode* leafNode = (BTreeLeafNode*) currentNode;
+	while (leafNode != nullptr) {
+		Key* keys = leafNode->getKeys();
+		for (int i = 0; i < NUM_KEYS; i++) {
+			std::cout << keys[i] << " ";
+		}
+		leafNode = leafNode->getNextBTreeLeafNode();
+		std::cout << " | ";
+	}
+	std::cout << std::endl;
+
 }
 
