@@ -103,10 +103,36 @@ void BTree::insert(long long value) {
 }
 
 void BTree::printLeafNode(long long value) {
+	BTreeNode* currentNode = BTree::root;
 
+	while (currentNode->getNodeType() != NodeType::LEAF) {
+		BTreeInternalNode* currentInternalNode = (BTreeInternalNode*)currentNode;
+		BTreeNode** pointers = currentInternalNode->getPointers();
+
+		currentNode = pointers[0];
+	}
+
+	BTreeLeafNode* leafNode = (BTreeLeafNode*) currentNode;
+	while (leafNode != nullptr) {
+		Key* keys = leafNode->getKeys();
+		for (int i = 0; i < NUM_KEYS; i++) {
+			std::cout << keys[i] << " ";
+		}
+		leafNode = leafNode->getNextBTreeLeafNode();
+		std::cout << " | ";
+	}
+	std::cout << std::endl;
 }
 
 void BTree::pointQuery(long long value) {
+	BTreeLeafNode* leafNode = BTree::findLeafNode(value);
+
+	Key* keys = leafNode->getKeys();
+
+	for (int i = 0; i < NUM_KEYS; i++) {
+		std::cout << keys[i] << " ";
+	}
+	std::cout << std::endl;
 
 }
 
