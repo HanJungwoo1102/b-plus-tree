@@ -114,31 +114,14 @@ void BTree::insert(long long value) {
 	}	
 
 	int length = leafNode->getLength();
-	
+
 	if (length < NUM_KEYS) {
 		leafNode->insert(value);	
 	} else {
 		BTreeLeafNode* newLeafNode = new BTreeLeafNode();	
 
-		long long keyArray[length + 1];
-		int findedIndex = -1;
-		for (int i = 0; i < length + 1; i++) {
-			long long key = leafNode->getKey(i);
-			if (key > value) {
-				if (findedIndex == -1) {
-					findedIndex = i;
-				}
-				keyArray[i + 1] = key;
-			} else {
-				keyArray[i] = key;
-			}
-		}
-
-		if (findedIndex == -1) {
-			keyArray[length + 1] = value;
-		} else {
-			keyArray[length] = value;
-		}
+		long long newKeys[length + 1];
+		BTree::insertInLeaf(newKeys, leafNode, value);
 
 	}
 }
@@ -182,4 +165,24 @@ BTreeLeafNode* BTree::findLeafNode(long long key) {
 	}
 	return (BTreeLeafNode*)currentNode;
 };
+
+void BTree::insertInLeaf(long long* keys, BTreeLeafNode* node, long long key) {
+	int length = node->getLength();
+	int findedIndex = length;
+
+	for (int i = 0; i < length; i++) {
+		long long currentKey = node->getKey(i);
+	
+		if (currentKey < key) {
+			keys[i] = currentKey;	
+		} else {
+			if (findedIndex == -1) {
+				findedIndex = i;
+			}
+			keys[i + 1] = currentKey;
+		}
+	}
+
+	keys[findedIndex] = key;
+}
 

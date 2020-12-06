@@ -56,6 +56,7 @@ class BTree{
 	BTreeNode *root;
 	bool isEmpty();
 	BTreeLeafNode* findLeafNode(long long key);
+	void insertInLeaf(long long* keys, BTreeLeafNode* node, long long key);
     public:
 	// You are not allowed to change the interfaces of these public methods.
 	BTree(); 
