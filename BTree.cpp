@@ -2,7 +2,9 @@
 #include "BTree.h"
 
 BTreeNode::BTreeNode() {
-	BTreeNode::length = 0;	
+	for (int i = 0; i < NUM_KEYS; i++) {
+		BTreeNode::keys[i] = NO_KEY;
+	} 	
 }
 
 BTreeNode::BTreeNode(NodeType type) : BTreeNode() {
@@ -13,65 +15,24 @@ NodeType BTreeNode::getNodeType() {
 	return BTreeNode::type;
 }
 
-void BTreeNode::insertKey(long long key) {
-	int length = BTreeNode::length;
-	long long * keys = BTreeNode::keys;
-
-	int insertedKeyIndex = length;
-
-	for (int i = 0; i < length; i++) {
-		if (keys[i] > key) {
-			insertedKeyIndex = i;
-			break;
-		}
-	}
-
-	for (int i = length - 1; i >= insertedKeyIndex; i--) {
-		keys[i + 1] = keys[i];
-	}	
-
-	keys[insertedKeyIndex] = key;
-	BTreeNode::length = length + 1;
-}
-
-void BTreeNode::removeKey(long long key) {
-	int length = BTreeNode::length;
-	long long * keys = BTreeNode::keys;
-
-	int removedKeyIndex = -1;
-
-	for (int i =0; i < length; i++) {
-		if (keys[i] == key) {
-			removedKeyIndex = i;
-			break;
-		}
-	}
-
-	if (removedKeyIndex != -1) {
-		for (int i = removedKeyIndex; i < length - 1; i++) {
-			keys[i] = keys[i + 1];
-		}
-	}
-}
-
-int BTreeNode::getLength() {
-	return BTreeNode::length;
-}
-
-long long BTreeNode::getKey(int keyIndex) {
-	return BTreeNode::keys[keyIndex];
+Key* BTreeNode::getKeys() {
+	return BTreeNode::keys;
 }
 
 BTreeInternalNode::BTreeInternalNode() : BTreeNode(NodeType::INTERNAL) {
+	for (int i = 0; i < NUM_KEYS + 1; i++) {
+		BTreeInternalNode::child[i] = nullptr;
+	}
 }
 
 BTreeInternalNode::~BTreeInternalNode() {}
 
-BTreeNode* BTreeInternalNode::getPointer(int pointerIndex) {
-	return BTreeInternalNode::child[pointerIndex];	
+BTreeNode** BTreeInternalNode::getPointers() {
+	return BTreeInternalNode::child;	
 }
 
 BTreeLeafNode::BTreeLeafNode() : BTreeNode(NodeType::LEAF) {
+	BTreeLeafNode::right_sibling = nullptr;
 }
 
 BTreeLeafNode::~BTreeLeafNode() {
@@ -80,10 +41,6 @@ BTreeLeafNode::~BTreeLeafNode() {
 
 void BTreeLeafNode::printLeafNode() {
 
-}
-
-void BTreeLeafNode::insert(long long key) {
-	BTreeLeafNode::insertKey(key);
 }
 
 BTreeLeafNode* BTreeLeafNode::getNextBTreeLeafNode() {
@@ -103,26 +60,45 @@ BTree::~BTree() {
 }
 
 void BTree::insert(long long value) {
-	std::cout << value << std::endl;
-
 	BTreeLeafNode* leafNode;
 
 	if (BTree::isEmpty()) {
 		leafNode = new BTreeLeafNode();
+		BTree::root = leafNode;
 	} else {
 		leafNode = BTree::findLeafNode(value);
 	}	
 
-	int length = leafNode->getLength();
+	Key* keys = leafNode->getKeys();
+	int length = BTree::getLength(keys);
 
 	if (length < NUM_KEYS) {
-		leafNode->insert(value);	
+		BTree::insertInLeaf(keys, value);
 	} else {
 		BTreeLeafNode* newLeafNode = new BTreeLeafNode();	
+		Key* newLeafKeys = newLeafNode->getKeys();
 
-		long long newKeys[length + 1];
-		BTree::insertInLeaf(newKeys, leafNode, value);
+		Key tempKeys[NUM_KEYS + 1];
 
+		for (int i = 0; i < NUM_KEYS + 1; i++) {
+			tempKeys[i] = NO_KEY;
+		}
+
+		BTree::copyKeys(keys, tempKeys, 0, NUM_KEYS - 1);
+
+		BTree::insertInLeaf(tempKeys, value);
+
+		BTree::eraseKeys(keys);
+
+		int splitedIndex = floor((NUM_KEYS + 1) / 2);	
+
+		BTree::copyKeys(tempKeys, keys, 0, splitedIndex);
+		BTree::copyKeys(tempKeys, newLeafKeys, splitedIndex + 1, NUM_KEYS);
+
+		newLeafNode->setNextBTreeLeafNode(leafNode->getNextBTreeLeafNode());
+		leafNode->setNextBTreeLeafNode(newLeafNode);
+
+		BTree::insertInParent(leafNode, newLeafKeys[0], newLeafNode);
 	}
 }
 
@@ -138,51 +114,146 @@ void BTree::rangeQuery(long long low, long long high) {
 
 }
 
-bool BTree::isEmpty() {
-	return BTree::root == NULL;
-}
-
-BTreeLeafNode* BTree::findLeafNode(long long key) {
+BTreeLeafNode* BTree::findLeafNode(Key key) {
 	BTreeNode* currentNode = BTree::root;
 	while(currentNode->getNodeType() != NodeType::LEAF)	{
 		BTreeInternalNode* currentInternalNode = (BTreeInternalNode*)currentNode;
-		int length = currentInternalNode->getLength();
-		int i = 0;
-		for (; i > length; i++) {
-			long long currentKey = currentInternalNode->getKey(i);
-			if (key < currentKey) {
-				break;
-			}
-		}
+		Key* keys = currentInternalNode->getKeys();
+		
+		int findedIndex = BTree::findSmallestIndexBiggerThanKey(keys, key);	
 
-		if (i == length) {
-			currentNode = currentInternalNode->getPointer(length);	
-		} else if (key == currentInternalNode->getKey(i)) {
-			currentNode = currentInternalNode->getPointer(i + 1);	
+		BTreeNode** pointers = currentInternalNode->getPointers();
+
+		if (findedIndex == -1) {
+			currentNode = BTree::getLastNonNullPointer(pointers);	
+		} else if (key == keys[findedIndex]) {
+			currentNode = pointers[findedIndex + 1];	
 		} else {
-			currentNode = currentInternalNode->getPointer(i);
+			currentNode = pointers[findedIndex];
 		}
 	}
 	return (BTreeLeafNode*)currentNode;
 };
 
-void BTree::insertInLeaf(long long* keys, BTreeLeafNode* node, long long key) {
-	int length = node->getLength();
-	int findedIndex = length;
+void BTree::insertInLeaf(Key* keys, Key key) {
+	if (key < keys[0]) {
+		BTree::shiftRightKeys(keys, 0);
+		keys[0] = key;
+	} else {
+		int findedIndex = BTree::findHighestIndexSmallerThanOrEqual(keys, key);
+		BTree::shiftRightKeys(keys, findedIndex + 1);
+		keys[findedIndex + 1] = key;
+	}
+}
 
-	for (int i = 0; i < length; i++) {
-		long long currentKey = node->getKey(i);
-	
-		if (currentKey < key) {
-			keys[i] = currentKey;	
-		} else {
-			if (findedIndex == -1) {
-				findedIndex = i;
-			}
-			keys[i + 1] = currentKey;
+void BTree::insertInParent(BTreeNode* node, Key key, BTreeNode* insertedNode) {
+	if (node == BTree::root) {
+		BTreeInternalNode* newNode = new BTreeInternalNode();		
+		
+		Key* newNodeKeys = newNode->getKeys();
+		BTreeNode** pointers = newNode->getPointers();
+
+		newNodeKeys[0] = key;
+		pointers[0] = node;
+		pointers[1] = insertedNode;
+
+		BTree::root = newNode;
+		return;
+	}
+	BTreeInternalNode* parent = BTree::findParent(node);
+}
+
+bool BTree::isEmpty() {
+	return BTree::root == NULL;
+}
+
+int BTree::getLength(Key* keys) {
+	int i = 0;
+	for (; i < NUM_KEYS; i++) {
+		if (keys[i] == NO_KEY) {
+			break;
 		}
 	}
+	return i;
+}
 
-	keys[findedIndex] = key;
+int BTree::findSmallestIndexBiggerThanKey(Key* keys, Key key) {
+	int result = -1;
+	for (int i = 0;i < NUM_KEYS; i++) {
+		if (keys[i] > key) {
+			result = i;
+			break;
+		}
+	}
+	return result;
+}
+
+int BTree::findHighestIndexSmallerThanOrEqual(Key* keys, Key key) {
+	int result = -1;
+	for (int i = NUM_KEYS; i > -1; i--) {
+		Key currentKey = keys[i];
+		if (currentKey != NO_KEY) {
+			if (currentKey <= key) {
+				result = i;
+				break;
+			}
+		}
+	}
+	return result;
+}
+
+BTreeNode* BTree::getLastNonNullPointer(BTreeNode** pointers) {
+	for (int i = NUM_KEYS - 1; i > -1; i--) {
+		if (pointers[i] != nullptr) {
+			return pointers[i];
+		}
+	}
+}
+
+void BTree::shiftRightKeys(Key* keys, int fromIndex) {
+	for (int i = NUM_KEYS - 2; i > fromIndex - 1; i--) {
+		keys[i + 1] = keys[i];
+	}
+}
+
+void BTree::copyKeys(Key* sourceKeyAddress, Key* targetKeyAddress, int startIndex, int endIndex) {
+	Key* startAddress = sourceKeyAddress + startIndex;
+	size_t copySize = (endIndex - startIndex + 1) * sizeof(Key);
+	
+	memcpy(startAddress, targetKeyAddress, copySize);	
+}
+
+void BTree::eraseKeys(Key* keys) {
+	for (int i = 0; i < NUM_KEYS; i++) {
+		keys[i] = NO_KEY;
+	}	
+}
+
+BTreeInternalNode* BTree::findParent(BTreeNode* node) {
+	return BTree::findParentNodeHavingThisChild(BTree::root, node);	
+}
+
+BTreeInternalNode* BTree::findParentNodeHavingThisChild(BTreeNode* node, BTreeNode* childNode) {
+	if (node->getNodeType() == NodeType::LEAF) {
+		return nullptr;	
+	} else {
+		BTreeInternalNode* internalNode = (BTreeInternalNode*) node;
+
+		BTreeNode** pointers = internalNode->getPointers();
+
+		for (int i = 0; i < NUM_KEYS + 1; i++) {
+			if (pointers[i] == childNode) {
+				return internalNode;
+			} 
+		}
+
+		for (int i = 0; i < NUM_KEYS + 1; i++) {
+			BTreeInternalNode* findedNode = BTree::findParentNodeHavingThisChild(pointers[i], childNode);
+
+			if (findedNode != nullptr) {
+				return findedNode;
+			}
+		}
+	}
 }
 

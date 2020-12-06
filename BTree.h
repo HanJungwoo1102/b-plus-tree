@@ -1,5 +1,7 @@
 // Note: You need to add additional member variables and functions as you need.
 #include <iostream>
+#include <cstring>
+#include <cmath>
 
 #define NUM_KEYS 10 
 // NUM_KEYS should be set to make each tree node as large as 4KB. 
@@ -8,26 +10,26 @@
 // In practice, DBMS employs 'slotted page structure' to store variable-length records in B+tree.
 // But the purpose of this assignment is to make students familiar with B-tree itself. 
 
+const long long NO_KEY = 0;
+
 enum NodeType {
 	ROOT,
 	INTERNAL,
 	LEAF
 };
 
+typedef long long Key;
+
 class BTreeNode{   
    protected:
-	NodeType type;
-	long long keys[NUM_KEYS];
-	int length;
-	void insertKey(long long key);
-	void removeKey(long long key);
+   	NodeType type;
+	Key keys[NUM_KEYS];
    public:
    	BTreeNode();
 	BTreeNode(NodeType type);
 	virtual ~BTreeNode() {}
 	NodeType getNodeType();
-	int getLength();
-	long long getKey(int keyIndex);
+	Key* getKeys();	
 };
 
 class BTreeInternalNode:public BTreeNode{
@@ -36,7 +38,7 @@ class BTreeInternalNode:public BTreeNode{
    public:
 	BTreeInternalNode();
 	~BTreeInternalNode();
-	BTreeNode* getPointer(int pointerIndex);
+	BTreeNode** getPointers();
 };
 
 class BTreeLeafNode:public BTreeNode{
@@ -46,7 +48,6 @@ class BTreeLeafNode:public BTreeNode{
 	BTreeLeafNode();
 	~BTreeLeafNode();
 	void printLeafNode(); // print all keys in the current leaf node, separated by comma.
-	void insert(long long key);
 	BTreeLeafNode* getNextBTreeLeafNode();
 	void setNextBTreeLeafNode(BTreeLeafNode* bTreeLeafNode);
 };
@@ -56,9 +57,19 @@ class BTree{
 	BTreeNode *root;
 	bool isEmpty();
 	BTreeLeafNode* findLeafNode(long long key);
-	void insertInLeaf(long long* keys, BTreeLeafNode* node, long long key);
+	void insertInLeaf(Key* keys, Key key);
+	void insertInParent(BTreeNode* node, Key key, BTreeNode* insertedNode);
+	int findSmallestIndexBiggerThanKey(Key* keys, Key key);
+	int findHighestIndexSmallerThanOrEqual(Key* keys, Key key);
+	BTreeNode* getLastNonNullPointer(BTreeNode** pointers);
+	int getLength(Key* keys);
+	void shiftRightKeys(Key* keys, int fromIndex);
+	void copyKeys(Key* sourceKeyAddress, Key* targetKeyAddress, int fromIndex, int toIndex);
+	void eraseKeys(Key* keys);
+	BTreeInternalNode* findParent(BTreeNode* node);
+	BTreeInternalNode* findParentNodeHavingThisChild(BTreeNode* node, BTreeNode* findingNode);
     public:
-	// You are not allowed to change the interfaces of these public methods.
+	// You are not allowed to change the interfaces of these public methodu.
 	BTree(); 
 	~BTree(); 
 	void insert(long long value);  
