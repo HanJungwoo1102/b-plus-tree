@@ -303,7 +303,6 @@ BTreeInternalNode* BTree::findParentNodeHavingThisChild(BTreeNode* node, BTreeNo
 		return nullptr;	
 	} else {
 		BTreeInternalNode* internalNode = (BTreeInternalNode*) node;
-
 		BTreeNode** pointers = internalNode->getPointers();
 
 		for (int i = 0; i < NUM_KEYS + 1; i++) {
@@ -313,12 +312,17 @@ BTreeInternalNode* BTree::findParentNodeHavingThisChild(BTreeNode* node, BTreeNo
 		}
 
 		for (int i = 0; i < NUM_KEYS + 1; i++) {
-			BTreeInternalNode* findedNode = BTree::findParentNodeHavingThisChild(pointers[i], childNode);
-
-			if (findedNode != nullptr) {
-				return findedNode;
+			BTreeNode* pointer = pointers[i];
+			if (pointer != nullptr) {
+				BTreeInternalNode* findedNode = BTree::findParentNodeHavingThisChild(pointers[i], childNode);
+			
+				if (findedNode != nullptr) {
+					return findedNode;
+				}
 			}
 		}
+
+		return nullptr;
 	}
 }
 
