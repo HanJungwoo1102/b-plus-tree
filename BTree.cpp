@@ -56,7 +56,6 @@ BTree::~BTree() {
 }
 
 void BTree::insert(long long value) {
-	std::cout << "insert: " << value << std::endl;
 	BTreeLeafNode* leafNode;
 
 	if (BTree::isEmpty()) {
@@ -97,7 +96,7 @@ void BTree::insert(long long value) {
 
 		BTree::insertInParent(leafNode, newLeafKeys[0], newLeafNode);
 	}
-	BTree::printAllLeaves();
+	// BTree::printAllLeaves();
 }
 
 void BTree::printLeafNode(long long value) {
