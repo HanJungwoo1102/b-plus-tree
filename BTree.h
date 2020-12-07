@@ -57,17 +57,21 @@ class BTree{
 	BTreeNode *root;
 	bool isEmpty();
 	BTreeLeafNode* findLeafNode(long long key);
-	void insertInLeaf(Key* keys, Key key);
+	void insertInLeaf(Key* keys, Key key, int keysSize);
 	void insertInParent(BTreeNode* node, Key key, BTreeNode* insertedNode);
 	int findSmallestIndexBiggerThanKey(Key* keys, Key key);
 	int findHighestIndexSmallerThanOrEqual(Key* keys, Key key);
 	BTreeNode* getLastNonNullPointer(BTreeNode** pointers);
 	int getLength(Key* keys);
-	void shiftRightKeys(Key* keys, int fromIndex);
+	void shiftRightKeys(Key* keys, int fromIndex, int keysSize);
 	void copyKeys(Key* sourceKeyAddress, Key* targetKeyAddress, int fromIndex, int toIndex);
+	void copyPointers(BTreeNode** sourcePointerAddress, BTreeNode** targetPointerAddress, int fromIndex, int toIndex);
 	void eraseKeys(Key* keys);
+	void erasePointers(BTreeNode** pointers);
 	BTreeInternalNode* findParent(BTreeNode* node);
 	BTreeInternalNode* findParentNodeHavingThisChild(BTreeNode* node, BTreeNode* findingNode);
+	int getPointersLength(BTreeNode** pointers);
+	void insertInternalNodeAfterNode(BTreeNode** pointers, Key* keys, BTreeNode* insertedNode, Key insertedKey, BTreeNode* afterNode, int pointersSize, int keysSize);
 	void printAllLeaves();
     public:
 	// You are not allowed to change the interfaces of these public methodu.

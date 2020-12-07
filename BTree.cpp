@@ -69,7 +69,7 @@ void BTree::insert(long long value) {
 	int length = BTree::getLength(keys);
 
 	if (length < NUM_KEYS) {
-		BTree::insertInLeaf(keys, value);
+		BTree::insertInLeaf(keys, value, NUM_KEYS);
 	} else {
 		BTreeLeafNode* newLeafNode = new BTreeLeafNode();	
 		Key* newLeafKeys = newLeafNode->getKeys();
@@ -82,14 +82,14 @@ void BTree::insert(long long value) {
 
 		BTree::copyKeys(keys, tempKeys, 0, NUM_KEYS - 1);
 		
-		BTree::insertInLeaf(tempKeys, value);
+		BTree::insertInLeaf(tempKeys, value, NUM_KEYS + 1);
 
 		BTree::eraseKeys(keys);
 
-		int splitedIndex = floor((NUM_KEYS + 1) / 2);	
+		int splitedNum = (NUM_KEYS + 1) / 2;	
 
-		BTree::copyKeys(tempKeys, keys, 0, splitedIndex);
-		BTree::copyKeys(tempKeys, newLeafKeys, splitedIndex + 1, NUM_KEYS);
+		BTree::copyKeys(tempKeys, keys, 0, splitedNum - 1);
+		BTree::copyKeys(tempKeys, newLeafKeys, splitedNum, NUM_KEYS - 1);
 
 		newLeafNode->setNextBTreeLeafNode(leafNode->getNextBTreeLeafNode());
 		leafNode->setNextBTreeLeafNode(newLeafNode);
@@ -146,13 +146,13 @@ BTreeLeafNode* BTree::findLeafNode(Key key) {
 	return (BTreeLeafNode*)currentNode;
 };
 
-void BTree::insertInLeaf(Key* keys, Key key) {
+void BTree::insertInLeaf(Key* keys, Key key, int keysSize) {
 	if (key < keys[0]) {
-		BTree::shiftRightKeys(keys, 0);
+		BTree::shiftRightKeys(keys, 0, keysSize);
 		keys[0] = key;
 	} else {
 		int findedIndex = BTree::findHighestIndexSmallerThanOrEqual(keys, key);
-		BTree::shiftRightKeys(keys, findedIndex + 1);
+		BTree::shiftRightKeys(keys, findedIndex + 1, keysSize);
 		keys[findedIndex + 1] = key;
 	}
 }
@@ -172,6 +172,46 @@ void BTree::insertInParent(BTreeNode* node, Key key, BTreeNode* insertedNode) {
 		return;
 	}
 	BTreeInternalNode* parent = BTree::findParent(node);
+	BTreeNode** pointers = parent->getPointers();		
+	Key* keys = parent->getKeys();
+	int length = BTree::getPointersLength(pointers);
+
+	if (length < NUM_KEYS + 1) {
+		BTree::insertInternalNodeAfterNode(pointers, keys, insertedNode, key, node, NUM_KEYS + 1, NUM_KEYS);
+	} else {
+		BTreeNode* tempPointers[NUM_KEYS + 2];
+		for (int i = 0; i < NUM_KEYS + 1; i++) {
+			tempPointers[i] = nullptr;
+		}
+
+		Key tempKeys[NUM_KEYS + 1];
+		for (int i = 0; i < NUM_KEYS; i++) {
+			tempKeys[i] = NO_KEY;
+		}
+	
+		BTree::copyKeys(keys, tempKeys, 0, NUM_KEYS - 1);
+		BTree::copyPointers(pointers, tempPointers, 0, NUM_KEYS);
+
+		BTree::insertInternalNodeAfterNode(tempPointers, tempKeys, insertedNode, key, node, NUM_KEYS + 2, NUM_KEYS + 1);
+
+		BTree::erasePointers(pointers);		
+
+		BTreeInternalNode* newInternalNode = new BTreeInternalNode();
+		BTreeNode** newPointers = newInternalNode->getPointers();
+		Key* newKeys = newInternalNode->getKeys();
+
+		int splitedNum = (NUM_KEYS + 1) / 2;
+
+		BTree::copyKeys(tempKeys, keys, 0, splitedNum - 1);
+		BTree::copyPointers(tempPointers, pointers, 0, splitedNum);
+
+		Key newKey = tempKeys[splitedNum];
+
+		BTree::copyKeys(tempKeys, newKeys, splitedNum + 1, NUM_KEYS - 1);
+		BTree::copyPointers(tempPointers, newPointers, splitedNum + 1, NUM_KEYS);
+		
+		BTree::insertInParent(parent, newKey, newInternalNode);
+	}
 }
 
 bool BTree::isEmpty() {
@@ -221,8 +261,8 @@ BTreeNode* BTree::getLastNonNullPointer(BTreeNode** pointers) {
 	}
 }
 
-void BTree::shiftRightKeys(Key* keys, int fromIndex) {
-	for (int i = NUM_KEYS - 2; i > fromIndex - 1; i--) {
+void BTree::shiftRightKeys(Key* keys, int fromIndex, int keysSize) {
+	for (int i = keysSize - 2; i > fromIndex - 1; i--) {
 		keys[i + 1] = keys[i];
 	}
 }
@@ -234,10 +274,23 @@ void BTree::copyKeys(Key* sourceKeyAddress, Key* targetKeyAddress, int startInde
 	memcpy(targetKeyAddress, startAddress, copySize);	
 }
 
+void BTree::copyPointers(BTreeNode** sourcePointerAddress, BTreeNode** targetPointerAddress, int startIndex, int endIndex) {
+	BTreeNode** startAddress = sourcePointerAddress + startIndex;
+	size_t copySize = (endIndex - startIndex + 1) * sizeof(BTreeNode**);
+
+	memcpy(targetPointerAddress, startAddress, copySize);
+}
+
 void BTree::eraseKeys(Key* keys) {
 	for (int i = 0; i < NUM_KEYS; i++) {
 		keys[i] = NO_KEY;
 	}	
+}
+
+void BTree::erasePointers(BTreeNode** pointers) {
+	for (int i = 0; i < NUM_KEYS + 1; i++) {
+		pointers[i] = nullptr;
+	}
 }
 
 BTreeInternalNode* BTree::findParent(BTreeNode* node) {
@@ -265,6 +318,39 @@ BTreeInternalNode* BTree::findParentNodeHavingThisChild(BTreeNode* node, BTreeNo
 				return findedNode;
 			}
 		}
+	}
+}
+
+int BTree::getPointersLength(BTreeNode** pointers) {
+	int i = 0;
+	for (; i < NUM_KEYS + 1; i++) {
+		if (pointers[i] == nullptr) {
+			break;
+		}
+	}
+	return i;
+}
+
+void BTree::insertInternalNodeAfterNode(BTreeNode** pointers, Key* keys, BTreeNode* insertedNode, Key insertedKey, BTreeNode* afterNode, int pointersSize, int keysSize) {
+	int afterNodeIndex = -1;
+
+	for (int i = 0; i < NUM_KEYS + 1; i++) {
+		if (pointers[i] == afterNode) {
+			afterNodeIndex = i;
+			break;
+		}
+	}
+
+	if (afterNodeIndex != -1) {
+		for (int i = pointersSize - 2; i > afterNodeIndex; i--) {
+			pointers[i + 1] = pointers[i];
+		}
+		for (int i = keysSize - 2; i > afterNodeIndex - 1; i--) {
+			keys[i + 1] = keys[i];
+		}
+
+		pointers[afterNodeIndex + 1] = insertedNode;
+		keys[afterNodeIndex] = insertedKey;
 	}
 }
 
