@@ -117,13 +117,48 @@ void BTree::pointQuery(long long value) {
 	Key* keys = leafNode->getKeys();
 
 	for (int i = 0; i < NUM_KEYS; i++) {
-		std::cout << keys[i] << " ";
+		if (keys[i] == value) {
+			std::cout << value << std::endl;
+			return;
+		}
 	}
-	std::cout << std::endl;
+	std::cout << "NOT FOUND" << std::endl;
 }
 
 void BTree::rangeQuery(long long low, long long high) {
-	std::cout << "low: " << low << ", hight: " << high << std::endl;
+	BTreeLeafNode* leafNode = BTree::findLeafNode(low);
+
+	Key* keys = leafNode->getKeys();
+	int initialLength = BTree::getLength(keys);
+
+	int index = initialLength;
+
+	for (int i = 0; i < NUM_KEYS; i++) {
+		if (keys[i] >= low) {
+			index = i;
+		}
+	}
+
+	bool isDone = false;
+
+	while (!isDone) {
+		Key* currentKeys = leafNode->getKeys();
+		int currentLength = BTree::getLength(currentKeys);
+		BTreeLeafNode* nextNode = leafNode->getNextBTreeLeafNode();
+
+		if (index < currentLength && currentKeys[index] < high) {
+			std::cout << currentKeys[index] << ", ";
+			index += 1;
+		} else if (index < currentLength && currentKeys[index] >= high) {
+			isDone = true;
+		} else if (index >= currentLength && nextNode != nullptr) {
+			leafNode = nextNode;
+			index = 0;
+		} else {
+			isDone = true;
+		}
+	}
+	std::cout << std::endl;
 }
 
 BTreeLeafNode* BTree::findLeafNode(Key key) {
