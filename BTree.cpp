@@ -56,6 +56,7 @@ BTree::~BTree() {
 }
 
 void BTree::insert(long long value) {
+	std::cout << "insert: " << value << std::endl;
 	BTreeLeafNode* leafNode;
 
 	if (BTree::isEmpty()) {
@@ -67,7 +68,7 @@ void BTree::insert(long long value) {
 
 	Key* keys = leafNode->getKeys();
 	int length = BTree::getLength(keys);
-
+	
 	if (length < NUM_KEYS) {
 		BTree::insertInLeaf(keys, value, NUM_KEYS);
 	} else {
@@ -89,7 +90,7 @@ void BTree::insert(long long value) {
 		int splitedNum = (NUM_KEYS + 1) / 2;	
 
 		BTree::copyKeys(tempKeys, keys, 0, splitedNum - 1);
-		BTree::copyKeys(tempKeys, newLeafKeys, splitedNum, NUM_KEYS - 1);
+		BTree::copyKeys(tempKeys, newLeafKeys, splitedNum, NUM_KEYS);
 
 		newLeafNode->setNextBTreeLeafNode(leafNode->getNextBTreeLeafNode());
 		leafNode->setNextBTreeLeafNode(newLeafNode);
@@ -207,8 +208,8 @@ void BTree::insertInParent(BTreeNode* node, Key key, BTreeNode* insertedNode) {
 
 		Key newKey = tempKeys[splitedNum];
 
-		BTree::copyKeys(tempKeys, newKeys, splitedNum + 1, NUM_KEYS - 1);
-		BTree::copyPointers(tempPointers, newPointers, splitedNum + 1, NUM_KEYS);
+		BTree::copyKeys(tempKeys, newKeys, splitedNum + 1, NUM_KEYS);
+		BTree::copyPointers(tempPointers, newPointers, splitedNum + 1, NUM_KEYS + 1);
 		
 		BTree::insertInParent(parent, newKey, newInternalNode);
 	}
@@ -254,7 +255,7 @@ int BTree::findHighestIndexSmallerThanOrEqual(Key* keys, Key key) {
 }
 
 BTreeNode* BTree::getLastNonNullPointer(BTreeNode** pointers) {
-	for (int i = NUM_KEYS - 1; i > -1; i--) {
+	for (int i = NUM_KEYS; i > -1; i--) {
 		if (pointers[i] != nullptr) {
 			return pointers[i];
 		}

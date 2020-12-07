@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cmath>
 
-#define NUM_KEYS 10 
+#define NUM_KEYS 5 
 // NUM_KEYS should be set to make each tree node as large as 4KB. 
 // But for this assignment, we will set the degree of node small to make debugging and grading easy
 // Please do not change this number. 
